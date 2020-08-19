@@ -11,7 +11,7 @@ This module implements the Bitrix24 REST API.
 """
 import requests
 from time import sleep
-from urllib.parse import urlparse
+from urlparse import urlparse
 from .exceptions import BitrixError
 
 
