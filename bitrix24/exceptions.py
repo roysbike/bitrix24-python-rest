@@ -11,7 +11,7 @@ This module contains the set of Bitrix24 REST exceptions.
 """
 
 
-class BitrixError(ValueError):
+class BitrixError(Exception):
     def __init__(self, response):
-        super().__init__(response['error_description'])
+        super(BitrixError, self).__init__(response['error_description'])
         self.code = response['error']

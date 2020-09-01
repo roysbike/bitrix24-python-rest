@@ -27,13 +27,20 @@ class Bitrix24(object):
       >>> bx24.callMethod('crm.product.list')
     """
 
-    def __init__(self, domain, timeout=60):
+    def __init__(self, domain, timeout=60, by_json=False):
         """Create Bitrix24 API object
         :param domain: str Bitrix24 webhook domain
         :param timeout: int Timeout for API request in seconds
         """
         self.domain = self._prepare_domain(domain)
         self.timeout = timeout
+        self.by_json = by_json
+        if by_json:
+            self.headers = {
+                'content-type': "application/json"
+            }
+        else:
+            self.headers = None
 
     def _prepare_domain(self, domain):
         """Normalize user passed domain to a valid one."""
@@ -47,28 +54,31 @@ class Bitrix24(object):
     def _prepare_params(self, params, prev=''):
         """Transforms list of params to a valid bitrix array."""
         ret = ''
-        if isinstance(params, dict):
-            for key, value in params.items():
-                if isinstance(value, dict):
-                    if prev:
-                        key = "{0}[{1}]".format(prev, key)
-                    ret += self._prepare_params(value, key)
-                elif (isinstance(value, list) or isinstance(value, tuple)) and len(value) > 0:
-                    for offset, val in enumerate(value):
-                        if isinstance(val, dict):
-                            ret += self._prepare_params(
-                                val, "{0}[{1}][{2}]".format(prev, key, offset))
-                        else:
-                            if prev:
-                                ret += "{0}[{1}][{2}]={3}&".format(
-                                    prev, key, offset, val)
+        if self.by_json:
+            ret = params
+        else:
+            if isinstance(params, dict):
+                for key, value in params.items():
+                    if isinstance(value, dict):
+                        if prev:
+                            key = "{0}[{1}]".format(prev, key)
+                        ret += self._prepare_params(value, key)
+                    elif (isinstance(value, list) or isinstance(value, tuple)) and len(value) > 0:
+                        for offset, val in enumerate(value):
+                            if isinstance(val, dict):
+                                ret += self._prepare_params(
+                                    val, "{0}[{1}][{2}]".format(prev, key, offset))
                             else:
-                                ret += "{0}[{1}]={2}&".format(key, offset, val)
-                else:
-                    if prev:
-                        ret += "{0}[{1}]={2}&".format(prev, key, value)
+                                if prev:
+                                    ret += "{0}[{1}][{2}]={3}&".format(
+                                        prev, key, offset, val)
+                                else:
+                                    ret += "{0}[{1}]={2}&".format(key, offset, val)
                     else:
-                        ret += "{0}={1}&".format(key, value)
+                        if prev:
+                            ret += "{0}[{1}]={2}&".format(prev, key, value)
+                        else:
+                            ret += "{0}={1}&".format(key, value)
         return ret
 
     def callMethod(self, method, **params):
@@ -85,9 +95,12 @@ class Bitrix24(object):
             p = self._prepare_params(params)
 
             if method.rsplit('.', 1)[1] in ['add', 'update', 'delete', 'set']:
-                r = requests.post(url, data=p, timeout=self.timeout).json()
+                if self.by_json:
+                    r = requests.post(url, json=p, headers=self.headers, timeout=self.timeout).json()
+                else:
+                    r = requests.post(url, data=p, timeout=self.timeout, headers=self.headers).json()
             else:
-                r = requests.get(url, params=p, timeout=self.timeout).json()
+                r = requests.get(url, params=p, timeout=self.timeout, headers=self.headers).json()
         except ValueError:
             if r['error'] not in 'QUERY_LIMIT_EXCEEDED':
                 raise BitrixError(r)
