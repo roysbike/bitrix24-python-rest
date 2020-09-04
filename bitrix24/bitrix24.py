@@ -35,12 +35,7 @@ class Bitrix24(object):
         self.domain = self._prepare_domain(domain)
         self.timeout = timeout
         self.by_json = by_json
-        if by_json:
-            self.headers = {
-                'content-type': "application/json"
-            }
-        else:
-            self.headers = None
+        self.headers = None
 
     def _prepare_domain(self, domain):
         """Normalize user passed domain to a valid one."""
@@ -92,15 +87,15 @@ class Bitrix24(object):
         try:
             url = '{0}/{1}.json'.format(self.domain, method)
 
-            p = self._prepare_params(params)
+            payload_data = self._prepare_params(params)
 
             if method.rsplit('.', 1)[1] in ['add', 'update', 'delete', 'set']:
                 if self.by_json:
-                    r = requests.post(url, json=p, headers=self.headers, timeout=self.timeout).json()
+                    r = requests.post(url, json=payload_data, headers=self.headers, timeout=self.timeout).json()
                 else:
-                    r = requests.post(url, data=p, timeout=self.timeout, headers=self.headers).json()
+                    r = requests.post(url, data=payload_data, timeout=self.timeout, headers=self.headers).json()
             else:
-                r = requests.get(url, params=p, timeout=self.timeout, headers=self.headers).json()
+                r = requests.get(url, params=payload_data, timeout=self.timeout, headers=self.headers).json()
         except ValueError:
             if r['error'] not in 'QUERY_LIMIT_EXCEEDED':
                 raise BitrixError(r)
