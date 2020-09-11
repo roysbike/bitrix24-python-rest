@@ -88,17 +88,17 @@ class Bitrix24(object):
             url = '{0}/{1}.json'.format(self.domain, method)
 
             payload_data = self._prepare_params(params)
+            r = None
 
             if method.rsplit('.', 1)[1] in ['add', 'update', 'delete', 'set']:
-                if self.by_json:
-                    r = requests.post(url, json=payload_data, headers=self.headers, timeout=self.timeout).json()
-                else:
-                    r = requests.post(url, data=payload_data, timeout=self.timeout, headers=self.headers).json()
+                r = self.post_method(payload_data, url)
             else:
                 r = requests.get(url, params=payload_data, timeout=self.timeout, headers=self.headers).json()
         except ValueError:
-            if r['error'] not in 'QUERY_LIMIT_EXCEEDED':
+            if r and r['error'] not in 'QUERY_LIMIT_EXCEEDED':
                 raise BitrixError(r)
+            elif r is None:
+                raise
             # Looks like we need to wait until expires limitation time by Bitrix24 API
             sleep(2)
             return self.callMethod(method, **params)
@@ -117,3 +117,10 @@ class Bitrix24(object):
                 result = r['result'] + data
             return result
         return r['result']
+
+    def post_method(self, payload_data, url):
+        if self.by_json:
+            r = requests.post(url, json=payload_data, headers=self.headers, timeout=self.timeout).json()
+        else:
+            r = requests.post(url, data=payload_data, timeout=self.timeout, headers=self.headers).json()
+        return r
