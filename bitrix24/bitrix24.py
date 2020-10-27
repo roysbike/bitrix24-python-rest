@@ -89,11 +89,7 @@ class Bitrix24(object):
 
             payload_data = self._prepare_params(params)
             r = None
-
-            if method.rsplit('.', 1)[1] in ['add', 'update', 'delete', 'set', 'get']:
-                r = self.post_method(payload_data, url)
-            # else:
-            #     r = requests.get(url, params=payload_data, timeout=self.timeout, headers=self.headers).json()
+            r = self.post_method(payload_data, url)
         except ValueError:
             if r and r['error'] not in 'QUERY_LIMIT_EXCEEDED':
                 raise BitrixError(r)
