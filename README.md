@@ -51,6 +51,11 @@ try:
 except BitrixError as message:
     print(message)
 ```
+## Update Deal crm.deal.update
+
+```
+bx24.callMethod("crm.deal.update", id=1, fields={ "TITLE": 'new name' }, params={ "REGISTER_SONET_EVENT": "Y" });
+```
 
 ## Notes
 List methods return all available items at once. For large collections
